@@ -2,12 +2,25 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const clientRoutes = require('./routes/client');
+const profitLossRouter = require('./routes/client');
+const profitLossRouterAvg = require('./routes/client');
 
 const app = express();
 const PORT = process.env.PORT || 3002;
 
 // Middleware
-app.use(cors());
+// app.use(cors());
+
+app.use(cors({
+  origin: '*', // Ganti dengan 'http://localhost:3000' jika ingin lebih spesifik
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Authorization', 'Content-Type'], // Izinkan header Authorization
+}));
+
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
 app.use(bodyParser.json());
 
 // app.get('/api/clientCash', async (req, res) => {
@@ -28,6 +41,29 @@ app.use(bodyParser.json());
 
 // Routes
 app.use('/api/client', clientRoutes);
+// app.use('/api/saham-profit-loss');
+app.use('/api/client', profitLossRouter);
+app.use('/api/client', profitLossRouterAvg);
+
+// Data client yang di-mapping berdasarkan clientId
+const clientDataMap = {
+  'sooj': 300,
+  '3eed': 500,
+  'abc': 100,
+  'xyz': 200,
+};
+
+// Endpoint untuk mengambil data berdasarkan clientId
+app.get('/client', (req, res) => {
+  const { id } = req.query; // Ambil parameter 'id' dari query string
+
+  // Ambil data berdasarkan clientId
+  const clientData = clientDataMap[id] || 'Data tidak ditemukan';
+
+  // Kirim response ke frontend
+  res.json({ clientId: id, clientData });
+});
+
 
 // Server
 app.listen(PORT, () => {
